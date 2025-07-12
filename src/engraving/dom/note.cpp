@@ -27,10 +27,8 @@
 
 #include "note.h"
 
-#include <assert.h>
+#include <cassert>
 
-#include "dom/noteline.h"
-#include "dom/volta.h"
 #include "translation.h"
 #include "types/typesconv.h"
 #include "iengravingfont.h"
@@ -40,14 +38,11 @@
 #include "accidental.h"
 #include "actionicon.h"
 #include "articulation.h"
-
 #include "bagpembell.h"
-#include "beam.h"
 #include "barline.h"
-
+#include "beam.h"
 #include "chord.h"
 #include "chordline.h"
-
 #include "drumset.h"
 #include "factory.h"
 #include "fingering.h"
@@ -55,9 +50,10 @@
 #include "guitarbend.h"
 #include "laissezvib.h"
 #include "linkedobjects.h"
-#include "marker.h"
 #include "measure.h"
+#include "navigate.h"
 #include "notedot.h"
+#include "noteline.h"
 #include "part.h"
 #include "partialtie.h"
 #include "pitchspelling.h"
@@ -68,16 +64,9 @@
 #include "stafftype.h"
 #include "stringdata.h"
 #include "tie.h"
-
 #include "undo.h"
 #include "utils.h"
-
-#include "navigate.h"
-
-#ifndef ENGRAVING_NO_ACCESSIBILITY
-#include "accessibility/accessibleitem.h"
-#include "accessibility/accessibleroot.h"
-#endif
+#include "volta.h"
 
 #include "log.h"
 
@@ -1174,7 +1163,7 @@ double Note::headHeight() const
 double Note::tabHeadHeight(const StaffType* tab) const
 {
     if (tab && m_fret != INVALID_FRET_INDEX && m_string != INVALID_STRING_INDEX) {
-        return tab->fretBoxH(style()) * magS();
+        return tab->fretBoxH() * magS();
     }
     return headHeight();
 }
@@ -1610,6 +1599,11 @@ void Note::setupAfterRead(const Fraction& ctxTick, bool pasteMode)
         }
     }
 
+    const StaffType* st = staffType();
+    if (st && st->isTabStaff() && st->fretUseTextStyle() && color() == configuration()->defaultColor()) {
+        setColor(propertyDefault(Pid::COLOR).value<Color>());
+    }
+
     for (EngravingItem* item : m_el) {
         if (!item->isSymbol()) {
             continue;
@@ -1720,6 +1714,7 @@ bool Note::acceptDrop(EditData& data) const
 
     return type == ElementType::ARTICULATION
            || type == ElementType::ORNAMENT
+           || type == ElementType::TAPPING
            || type == ElementType::FERMATA
            || type == ElementType::CHORDLINE
            || type == ElementType::TEXT
@@ -3264,10 +3259,26 @@ PropertyValue Note::propertyDefault(Pid propertyId) const
             return false;
         }
         return EngravingItem::propertyDefault(propertyId);
+    case Pid::COLOR: {
+        const StaffType* st = staffType();
+        if (st && st->isTabStaff() && st->fretUseTextStyle()) {
+            return style().styleV(Sid::tabFretNumberColor);
+        }
+        return EngravingItem::propertyDefault(propertyId);
+    }
     default:
         break;
     }
     return EngravingItem::propertyDefault(propertyId);
+}
+
+void Note::styleChanged()
+{
+    const StaffType* st = staffType();
+    if (st->isTabStaff() && st->fretUseTextStyle()) {
+        setProperty(Pid::COLOR, style().styleV(Sid::tabFretNumberColor));
+    }
+    EngravingItem::styleChanged();
 }
 
 //---------------------------------------------------------
@@ -3949,6 +3960,11 @@ bool Note::hasSlideToNote() const
 bool Note::hasSlideFromNote() const
 {
     return m_slideFromType != SlideType::Undefined;
+}
+
+bool Note::isGrace() const
+{
+    return noteType() != NoteType::NORMAL;
 }
 
 bool Note::isPreBendStart() const

@@ -37,6 +37,7 @@
 #include "engraving/dom/fermata.h"
 #include "engraving/dom/figuredbass.h"
 #include "engraving/dom/fingering.h"
+#include "engraving/dom/glissando.h"
 #include "engraving/dom/hairpin.h"
 #include "engraving/dom/harmony.h"
 #include "engraving/dom/jump.h"
@@ -569,56 +570,6 @@ int Convert::breaksecToMEI(engraving::BeamMode beamMode)
     }
 
     return breaksec;
-}
-
-Convert::BracketStruct Convert::bracketFromMEI(const libmei::StaffGrp& meiStaffGrp)
-{
-    Convert::BracketStruct bracketSt;
-
-    switch (meiStaffGrp.GetSymbol()) {
-    case (libmei::staffGroupingSym_SYMBOL_bracket): bracketSt.bracketType = engraving::BracketType::NORMAL;
-        break;
-    case (libmei::staffGroupingSym_SYMBOL_brace): bracketSt.bracketType = engraving::BracketType::BRACE;
-        break;
-    case (libmei::staffGroupingSym_SYMBOL_bracketsq): bracketSt.bracketType = engraving::BracketType::SQUARE;
-        break;
-    case (libmei::staffGroupingSym_SYMBOL_line): bracketSt.bracketType = engraving::BracketType::LINE;
-        break;
-    case (libmei::staffGroupingSym_SYMBOL_none): bracketSt.bracketType = engraving::BracketType::NO_BRACKET;
-        break;
-    default: break;
-    }
-
-    if (meiStaffGrp.HasBarThru() && meiStaffGrp.GetBarThru() == libmei::BOOLEAN_true) {
-        bracketSt.barLineSpan = 1;
-    }
-
-    return bracketSt;
-}
-
-libmei::StaffGrp Convert::bracketToMEI(const engraving::BracketType bracket, int barLineSpan)
-{
-    libmei::StaffGrp meiStaffGrp;
-    // @symbol
-    switch (bracket) {
-    case (engraving::BracketType::NORMAL): meiStaffGrp.SetSymbol(libmei::staffGroupingSym_SYMBOL_bracket);
-        break;
-    case (engraving::BracketType::BRACE): meiStaffGrp.SetSymbol(libmei::staffGroupingSym_SYMBOL_brace);
-        break;
-    case (engraving::BracketType::SQUARE): meiStaffGrp.SetSymbol(libmei::staffGroupingSym_SYMBOL_bracketsq);
-        break;
-    case (engraving::BracketType::LINE): meiStaffGrp.SetSymbol(libmei::staffGroupingSym_SYMBOL_line);
-        break;
-    case (engraving::BracketType::NO_BRACKET): meiStaffGrp.SetSymbol(libmei::staffGroupingSym_SYMBOL_none);
-        break;
-    default: break;
-    }
-    // @bar.thru
-    if (barLineSpan > 0) {
-        meiStaffGrp.SetBarThru(libmei::BOOLEAN_true);
-    }
-
-    return meiStaffGrp;
 }
 
 void Convert::breathFromMEI(engraving::Breath* breath, const libmei::Breath& meiBreath, bool& warning)
@@ -1466,6 +1417,9 @@ std::pair<libmei::Harm, libmei::Fb> Convert::fbToMEI(const engraving::FiguredBas
     libmei::Harm meiHarm;
     libmei::Fb meiFb;
 
+    // @staff
+    Convert::staffIdentToMEI(figuredBass, meiHarm);
+
     // @color
     Convert::colorToMEI(figuredBass, meiHarm);
 
@@ -1607,6 +1561,52 @@ libmei::Fing Convert::fingToMEI(const engraving::Fingering* fing, StringList& me
     Convert::colorToMEI(fing, meiFing);
 
     return meiFing;
+}
+
+void Convert::glissFromMEI(engraving::Glissando* gliss, const libmei::Gliss& meiGliss, bool& warning)
+{
+    warning = false;
+
+    // @lform
+    bool lineWarning;
+    switch (meiGliss.GetLform()) {
+    case libmei::LINEFORM_dotted:
+    case libmei::LINEFORM_dashed:
+    case libmei::LINEFORM_solid:
+        gliss->setGlissandoType(engraving::GlissandoType::STRAIGHT);
+        gliss->setLineStyle(Convert::lineFromMEI(meiGliss.GetLform(), lineWarning));
+        break;
+    case libmei::LINEFORM_wavy:
+    default:
+        gliss->setGlissandoType(engraving::GlissandoType::WAVY);
+        break;
+    }
+
+    // @color
+    Convert::colorlineFromMEI(gliss, meiGliss);
+}
+
+libmei::Gliss Convert::glissToMEI(const engraving::Glissando* gliss)
+{
+    libmei::Gliss meiGliss;
+
+    // @lform
+    switch (gliss->glissandoType()) {
+    case engraving::GlissandoType::STRAIGHT:
+        meiGliss.SetLform(Convert::lineToMEI(gliss->lineStyle()));
+        break;
+    case engraving::GlissandoType::WAVY:
+        meiGliss.SetLform(libmei::LINEFORM_wavy);
+        break;
+    default:
+        meiGliss.SetLform(libmei::LINEFORM_NONE);
+        break;
+    }
+
+    // @color
+    Convert::colorlineToMEI(gliss, meiGliss);
+
+    return meiGliss;
 }
 
 std::pair<bool, engraving::NoteType> Convert::gracegrpFromMEI(const libmei::graceGrpLog_ATTACH meiAttach, const libmei::data_GRACE meiGrace,
@@ -1753,6 +1753,9 @@ libmei::Harm Convert::harmToMEI(const engraving::Harmony* harmony, StringList& m
     if (harmony->propertyFlags(engraving::Pid::PLACEMENT) == engraving::PropertyFlags::UNSTYLED) {
         meiHarm.SetPlace(Convert::placeToMEI(harmony->placement()));
     }
+
+    // @staff
+    Convert::staffIdentToMEI(harmony, meiHarm);
 
     // @color
     Convert::colorToMEI(harmony, meiHarm);
@@ -2936,6 +2939,34 @@ libmei::StaffDef Convert::staffToMEI(const engraving::Staff* staff)
     return meiStaffDef;
 }
 
+Convert::BracketStruct Convert::staffGrpFromMEI(const libmei::StaffGrp& meiStaffGrp)
+{
+    Convert::BracketStruct bracketSt;
+
+    bracketSt.bracketType = symbolFromMEI(meiStaffGrp.GetSymbol());
+
+    if (meiStaffGrp.HasBarThru() && meiStaffGrp.GetBarThru() == libmei::BOOLEAN_true) {
+        bracketSt.barLineSpan = 1;
+    }
+
+    return bracketSt;
+}
+
+libmei::StaffGrp Convert::staffGrpToMEI(const engraving::BracketType bracket, int barLineSpan)
+{
+    libmei::StaffGrp meiStaffGrp;
+
+    // @symbol
+    meiStaffGrp.SetSymbol(symbolToMEI(bracket));
+
+    // @bar.thru
+    if (barLineSpan > 0) {
+        meiStaffGrp.SetBarThru(libmei::BOOLEAN_true);
+    }
+
+    return meiStaffGrp;
+}
+
 std::pair<engraving::DirectionV, bool> Convert::stemFromMEI(const libmei::AttStems& meiStemsAtt, bool& warning)
 {
     warning = false;
@@ -3082,6 +3113,35 @@ libmei::Syl Convert::sylToMEI(const engraving::Lyrics* lyrics, ElisionType elisi
     }
 
     return meiSyl;
+}
+
+engraving::BracketType Convert::symbolFromMEI(const libmei::staffGroupingSym_SYMBOL meiGrpSym)
+{
+    switch (meiGrpSym) {
+    case (libmei::staffGroupingSym_SYMBOL_bracket): return engraving::BracketType::NORMAL;
+    case (libmei::staffGroupingSym_SYMBOL_brace): return engraving::BracketType::BRACE;
+    case (libmei::staffGroupingSym_SYMBOL_bracketsq): return engraving::BracketType::SQUARE;
+    case (libmei::staffGroupingSym_SYMBOL_line): return engraving::BracketType::LINE;
+    case (libmei::staffGroupingSym_SYMBOL_none): return engraving::BracketType::NO_BRACKET;
+    default: return engraving::BracketType::NO_BRACKET;
+    }
+}
+
+libmei::staffGroupingSym_SYMBOL Convert::symbolToMEI(const engraving::BracketType bracket)
+{
+    switch (bracket) {
+    case (engraving::BracketType::NORMAL): return libmei::staffGroupingSym_SYMBOL_bracket;
+        break;
+    case (engraving::BracketType::BRACE): return libmei::staffGroupingSym_SYMBOL_brace;
+        break;
+    case (engraving::BracketType::SQUARE): return libmei::staffGroupingSym_SYMBOL_bracketsq;
+        break;
+    case (engraving::BracketType::LINE): return libmei::staffGroupingSym_SYMBOL_line;
+        break;
+    case (engraving::BracketType::NO_BRACKET): return libmei::staffGroupingSym_SYMBOL_none;
+        break;
+    default: return libmei::staffGroupingSym_SYMBOL_NONE;
+    }
 }
 
 void Convert::tempoFromMEI(engraving::TempoText* tempoText, const StringList& meiLines, const libmei::Tempo& meiTempo, bool& warning)

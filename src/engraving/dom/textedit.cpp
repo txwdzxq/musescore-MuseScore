@@ -271,7 +271,7 @@ void TextBase::insertSym(EditData& ed, SymId id)
     deleteSelectedText(ed);
     String s = score()->engravingFont()->toString(id);
     cursor->format()->setFontFamily(u"ScoreText");
-    score()->undo(new InsertText(m_cursor, s), &ed);
+    score()->undo(new InsertText(cursor, s), &ed);
 }
 
 //---------------------------------------------------------
@@ -289,7 +289,7 @@ bool TextBase::isTextualEditAllowed(EditData& ed) const
 {
     // Keep this method closely in sync with TextBase::edit()!
 
-    if (ed.key == Key_Shift || ed.key == Key_Escape) {
+    if (ed.key == Key_Shift || ed.key == Key_Escape || ed.key == Key_Tab) {
         return false;
     }
 
@@ -338,7 +338,6 @@ bool TextBase::isTextualEditAllowed(EditData& ed) const
     case Key_Down:
     case Key_Home:
     case Key_End:
-    case Key_Tab:
     case Key_Space:
     case Key_Minus:
     case Key_Underscore:
@@ -484,23 +483,41 @@ bool TextBase::editTextual(EditData& ed)
 
             return true;
 
-        case Key_Delete:
-            if (!deleteSelectedText(ed)) {
-                // check for move down
-                if (cursor->column() == cursor->columns()) {               // if you are on the end of the line, delete the newline char
-                    size_t cursorRow = cursor->row();
-                    cursor->movePosition(TextCursor::MoveOperation::Down);
-                    if (cursor->row() != cursorRow) {
-                        cursor->movePosition(TextCursor::MoveOperation::StartOfLine);
-                        score()->undo(new JoinText(cursor), &ed);
+        case Key_Delete: {
+            int startPosition = cursor->currentPosition();
+
+            if (ctrlPressed) {
+                // delete next word
+                cursor->movePosition(TextCursor::MoveOperation::NextWord, TextCursor::MoveMode::KeepAnchor);
+                int endPosition = cursor->currentPosition();
+                String text = cursor->selectedText();
+
+                s.clear();
+
+                if (deleteSelectedText(ed)) {
+                    notifyAboutTextRemoved(startPosition, endPosition, text);
+                }
+            } else {
+                String text = cursor->selectedText();
+
+                if (!deleteSelectedText(ed)) {
+                    // if you are on the end of the line, delete the newline char
+                    if (cursor->column() == cursor->columns()) {
+                        size_t cursorRow = cursor->row();
+                        cursor->movePosition(TextCursor::MoveOperation::Down);
+                        if (cursor->row() != cursorRow) {
+                            cursor->movePosition(TextCursor::MoveOperation::StartOfLine);
+                            score()->undo(new JoinText(cursor), &ed);
+                        }
+                    } else {
+                        score()->undo(new RemoveText(cursor, String(cursor->currentCharacter())), &ed);
                     }
                 } else {
-                    score()->undo(new RemoveText(cursor, String(cursor->currentCharacter())), &ed);
+                    notifyAboutTextRemoved(startPosition + 1, startPosition, text);
                 }
-
-//                notifyAboutTextRemoved() // todo
             }
             return true;
+        }
 
         case Key_Backspace: {
             int startPosition = cursor->currentPosition();
@@ -609,11 +626,6 @@ bool TextBase::editTextual(EditData& ed)
 
             notifyAboutTextCursorChanged();
 
-            break;
-
-        case Key_Tab:
-            s = u" ";
-            ed.modifiers = {};
             break;
 
         case Key_Space:
@@ -940,6 +952,7 @@ void TextBase::paste(EditData& ed, const String& txt)
                     sym.clear();
                 } else if (token == "/sym") {
                     symState = false;
+                    static_cast<TextEditData*>(ed.getData(this).get())->cursor()->setFormat(format);
                     insertSym(ed, SymNames::symIdByName(sym));
                 } else {
                     prepareFormat(token, format);

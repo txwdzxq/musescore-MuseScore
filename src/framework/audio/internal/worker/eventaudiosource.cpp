@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -195,6 +195,50 @@ void EventAudioSource::applyInputParams(const AudioInputParams& requiredParams)
 async::Channel<AudioInputParams> EventAudioSource::inputParamsChanged() const
 {
     return m_paramsChanges;
+}
+
+void EventAudioSource::prepareToPlay()
+{
+    ONLY_AUDIO_WORKER_THREAD;
+
+    IF_ASSERT_FAILED(m_synth) {
+        return;
+    }
+
+    m_synth->prepareToPlay();
+}
+
+bool EventAudioSource::readyToPlay() const
+{
+    ONLY_AUDIO_WORKER_THREAD;
+
+    IF_ASSERT_FAILED(m_synth) {
+        return false;
+    }
+
+    return m_synth->readyToPlay();
+}
+
+async::Notification EventAudioSource::readyToPlayChanged() const
+{
+    ONLY_AUDIO_WORKER_THREAD;
+
+    IF_ASSERT_FAILED(m_synth) {
+        return {};
+    }
+
+    return m_synth->readyToPlayChanged();
+}
+
+InputProcessingProgress EventAudioSource::inputProcessingProgress() const
+{
+    ONLY_AUDIO_WORKER_THREAD;
+
+    IF_ASSERT_FAILED(m_synth) {
+        return {};
+    }
+
+    return m_synth->inputProcessingProgress();
 }
 
 EventAudioSource::SynthCtx EventAudioSource::currentSynthCtx() const

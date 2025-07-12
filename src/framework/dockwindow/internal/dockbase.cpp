@@ -191,6 +191,11 @@ bool DockBase::separatorsVisible() const
     return m_properties.separatorsVisible;
 }
 
+bool DockBase::defaultVisibility() const
+{
+    return m_defaultVisibility;
+}
+
 bool DockBase::isCompact() const
 {
     return m_isCompact;
@@ -693,10 +698,6 @@ void DockBase::applySizeConstraints()
         QRect winRect(window->dragRect().topLeft(), winSize);
 
         window->setGeometry(winRect);
-
-        if (KDDockWidgets::LayoutWidget* layout = window->layoutWidget()) {
-            layout->setLayoutSize(winSize);
-        }
     }
 
     if (!frame || !m_inited) {

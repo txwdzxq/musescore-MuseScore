@@ -184,6 +184,7 @@ void PopupView::initCloseController()
     m_closeController->setParentItem(parentItem());
     m_closeController->setWindow(window());
     m_closeController->setIsCloseOnPressOutsideParent(m_closePolicies & ClosePolicy::CloseOnPressOutsideParent);
+    m_closeController->setCanClosed(!m_closePolicies.testFlag(ClosePolicy::NoAutoClose));
 
     m_closeController->closeNotification().onNotify(this, [this]() {
         close(true);
@@ -237,6 +238,8 @@ void PopupView::doOpen()
 
     beforeOpen();
 
+    resolveParentWindow();
+
     updateGeometry();
 
     if (!isDialog()) {
@@ -271,7 +274,6 @@ void PopupView::doOpen()
         m_window->setResizable(m_resizable);
     }
 
-    resolveParentWindow();
     resolveNavigationParentControl();
 
     QScreen* screen = resolveScreen();
@@ -310,6 +312,7 @@ void PopupView::close(bool force)
     }
 
     if (m_closeController) {
+        m_closeController->setCanClosed(true);
         m_closeController->setActive(false);
     }
 
@@ -345,9 +348,9 @@ PopupView::ClosePolicies PopupView::closePolicies() const
     return m_closePolicies;
 }
 
-PopupView::Placement PopupView::placement() const
+PopupView::PlacementPolicies PopupView::placementPolicies() const
 {
-    return m_placement;
+    return m_placementPolicies;
 }
 
 bool PopupView::activateParentOnClose() const
@@ -500,14 +503,14 @@ void PopupView::setClosePolicies(ClosePolicies closePolicies)
     emit closePoliciesChanged(closePolicies);
 }
 
-void PopupView::setPlacement(Placement placement)
+void PopupView::setPlacementPolicies(muse::uicomponents::PopupView::PlacementPolicies placementPolicies)
 {
-    if (m_placement == placement) {
+    if (m_placementPolicies == placementPolicies) {
         return;
     }
 
-    m_placement = placement;
-    emit placementChanged(placement);
+    m_placementPolicies = placementPolicies;
+    emit placementPoliciesChanged(placementPolicies);
 }
 
 void PopupView::setObjectId(QString objectId)
@@ -786,14 +789,15 @@ void PopupView::updateGeometry()
         viewRect.moveTopLeft(m_globalPos);
     };
 
-    bool canFitAbove = viewRect.height() < parentTopLeft.y();
-    bool canFitBelow = viewRect.bottom() < anchorRect.bottom();
+    bool ignoreFit = m_placementPolicies.testFlag(PlacementPolicy::IgnoreFit);
+    bool canFitAbove = !ignoreFit ? viewRect.height() < parentTopLeft.y() : true;
+    bool canFitBelow = !ignoreFit ? viewRect.bottom() < anchorRect.bottom() : true;
 
-    if (placement() == Placement::PreferAbove && canFitAbove) {
+    if (m_placementPolicies.testFlag(PlacementPolicy::PreferBelow) && canFitBelow) {
+        movePos(m_globalPos.x(), parentTopLeft.y() + parent->height());
+    } else if (m_placementPolicies.testFlag(PlacementPolicy::PreferAbove) && canFitAbove) {
         movePos(m_globalPos.x(), parentTopLeft.y() - viewRect.height());
         setOpensUpward(true);
-    } else if (placement() == Placement::PreferBelow && canFitBelow) {
-        movePos(m_globalPos.x(), parentTopLeft.y() + parent->height());
     } else if (!canFitBelow) {
         if (canFitAbove) {
             // move to the top of the parent

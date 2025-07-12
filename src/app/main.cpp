@@ -32,6 +32,7 @@
 #include "global/iapplication.h"
 
 #include "muse_framework_config.h"
+#include "app_config.h"
 
 #include "log.h"
 
@@ -97,6 +98,11 @@ int main(int argc, char** argv)
     if (qEnvironmentVariable("QT_QPA_PLATFORM") != "offscreen") {
         qputenv("QT_QPA_PLATFORMTHEME", "gtk3");
     }
+
+    //! NOTE Forced X11, with Wayland there are a number of problems now
+    if (qEnvironmentVariable("QT_QPA_PLATFORM") == "") {
+        qputenv("QT_QPA_PLATFORM", "xcb");
+    }
 #endif
 
 #ifdef Q_OS_WIN
@@ -134,7 +140,7 @@ int main(int argc, char** argv)
 #ifndef MUSE_APP_INSTALL_SUFFIX
 #define MUSE_APP_INSTALL_SUFFIX ""
 #endif
-    QGuiApplication::setDesktopFileName("org.musescore.MuseScore" + QString(MUSE_APP_INSTALL_SUFFIX) + ".desktop");
+    QGuiApplication::setDesktopFileName("org.musescore.MuseScore" MUSE_APP_INSTALL_SUFFIX);
 #endif
 
 #if (defined (_MSCVER) || defined (_MSC_VER))
@@ -180,6 +186,7 @@ int main(int argc, char** argv)
     // ====================================================
     // Parse command line options
     // ====================================================
+#ifdef MUE_ENABLE_CONSOLEAPP
     CommandLineParser commandLineParser;
     commandLineParser.init();
     commandLineParser.parse(argcFinal, argvFinal);
@@ -194,9 +201,16 @@ int main(int argc, char** argv)
     }
 
     commandLineParser.processBuiltinArgs(*qapp);
+    CmdOptions opt = commandLineParser.options();
+
+#else
+    QCoreApplication* qapp = new QApplication(argcFinal, argvFinal);
+    CmdOptions opt;
+    opt.runMode = IApplication::RunMode::GuiApp;
+#endif
 
     AppFactory f;
-    std::shared_ptr<muse::IApplication> app = f.newApp(commandLineParser.options());
+    std::shared_ptr<muse::IApplication> app = f.newApp(opt);
 
     app->perform();
 

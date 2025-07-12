@@ -22,6 +22,7 @@
 #include "abstractnotationpaintview.h"
 
 #include <QPainter>
+#include <QMimeData>
 
 #include "actions/actiontypes.h"
 
@@ -382,6 +383,7 @@ void AbstractNotationPaintView::onMatrixChanged(const Transform& oldMatrix, cons
 
     emit horizontalScrollChanged();
     emit verticalScrollChanged();
+    emit matrixChanged();
     emit viewportChanged();
 
     onPlaybackCursorRectChanged();
@@ -745,6 +747,11 @@ std::pair<qreal, qreal> AbstractNotationPaintView::constraintCanvas(qreal dx, qr
     }
 
     return { dx, dy };
+}
+
+QVariant AbstractNotationPaintView::matrix() const
+{
+    return Transform::toQTransform(m_matrix);
 }
 
 PointF AbstractNotationPaintView::viewportTopLeft() const
@@ -1225,6 +1232,10 @@ void AbstractNotationPaintView::keyReleaseEvent(QKeyEvent* event)
 
 bool AbstractNotationPaintView::event(QEvent* event)
 {
+    if (!isInited()) {
+        return QQuickPaintedItem::event(event);
+    }
+
     QEvent::Type eventType = event->type();
     auto keyEvent = dynamic_cast<QKeyEvent*>(event);
 

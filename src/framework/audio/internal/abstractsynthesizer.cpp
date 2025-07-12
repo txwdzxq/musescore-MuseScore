@@ -5,7 +5,7 @@
  * MuseScore
  * Music Composition & Notation
  *
- * Copyright (C) 2021 MuseScore BVBA and others
+ * Copyright (C) 2025 MuseScore BVBA and others
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU General Public License version 3 as
@@ -68,9 +68,35 @@ void AbstractSynthesizer::revokePlayingNotes()
     ONLY_AUDIO_WORKER_THREAD;
 }
 
+void AbstractSynthesizer::prepareToPlay()
+{
+    ONLY_AUDIO_WORKER_THREAD;
+}
+
+bool AbstractSynthesizer::readyToPlay() const
+{
+    ONLY_AUDIO_WORKER_THREAD;
+
+    return true;
+}
+
+async::Notification AbstractSynthesizer::readyToPlayChanged() const
+{
+    ONLY_AUDIO_WORKER_THREAD;
+
+    return m_readyToPlayChanged;
+}
+
 void AbstractSynthesizer::updateRenderingMode(const RenderMode /*mode*/)
 {
     ONLY_AUDIO_WORKER_THREAD;
+}
+
+InputProcessingProgress AbstractSynthesizer::inputProcessingProgress() const
+{
+    ONLY_AUDIO_WORKER_THREAD;
+
+    return m_inputProcessingProgress;
 }
 
 RenderMode AbstractSynthesizer::currentRenderMode() const

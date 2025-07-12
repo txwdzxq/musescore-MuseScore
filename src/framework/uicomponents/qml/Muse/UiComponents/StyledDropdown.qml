@@ -53,6 +53,8 @@ Item {
 
     property alias navigation: mainItem.navigation
 
+    property alias isOpened: dropdownLoader.isOpened
+
     signal activated(int index, var value)
 
     height: 30
@@ -64,7 +66,8 @@ Item {
         }
 
         for (var i = 0; i < root.count; ++i) {
-            if (Utils.getItemValue(root.model, i, root.valueRole) === value) {
+            var rootValue = Utils.getItemValue(root.model, i, root.valueRole)
+            if (Utils.areEqual(rootValue, value)) {
                 return i
             }
         }
@@ -78,7 +81,8 @@ Item {
         }
 
         for (var i = 0; i < root.count; ++i) {
-            if (Utils.getItemValue(root.model, i, root.textRole) === text) {
+            var rootValue = Utils.getItemValue(root.model, i, root.textRole)
+            if (Utils.areEqual(rootValue, text)) {
                 return i
             }
         }
@@ -92,7 +96,8 @@ Item {
         }
 
         for (var i = 0; i < root.count; ++i) {
-            if (Utils.getItemValue(root.model, i, root.valueRole) === value) {
+            var rootValue = Utils.getItemValue(root.model, i, root.valueRole)
+            if (Utils.areEqual(rootValue, value)) {
                 return Utils.getItemValue(model, i, textRole, indeterminateText)
             }
         }

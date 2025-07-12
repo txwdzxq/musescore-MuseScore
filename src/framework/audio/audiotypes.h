@@ -34,6 +34,7 @@
 #include "global/realfn.h"
 #include "global/async/channel.h"
 #include "global/io/iodevice.h"
+#include "global/progress.h"
 
 #include "mpe/events.h"
 
@@ -129,6 +130,7 @@ enum class AudioResourceType {
     MusePlugin,
     MuseSamplerSoundPack,
     Lv2Plugin,
+    AudioUnit,
 };
 
 struct AudioResourceMeta {
@@ -216,6 +218,7 @@ struct AudioFxParams {
         switch (resourceMeta.type) {
         case AudioResourceType::VstPlugin: return AudioFxType::VstFx;
         case AudioResourceType::MusePlugin: return AudioFxType::MuseFx;
+        case AudioResourceType::AudioUnit:
         case AudioResourceType::Lv2Plugin:
         case AudioResourceType::FluidSoundfont:
         case AudioResourceType::MuseSamplerSoundPack:
@@ -305,6 +308,7 @@ inline AudioSourceType sourceTypeFromResourceType(AudioResourceType type)
     case AudioResourceType::FluidSoundfont: return AudioSourceType::Fluid;
     case AudioResourceType::VstPlugin: return AudioSourceType::Vsti;
     case AudioResourceType::MuseSamplerSoundPack: return AudioSourceType::MuseSampler;
+    case AudioResourceType::AudioUnit:
     case AudioResourceType::Lv2Plugin:
     case AudioResourceType::MusePlugin:
     case AudioResourceType::Undefined: break;
@@ -438,6 +442,23 @@ enum class RenderMode {
     RealTimeMode,
     IdleMode,
     OfflineMode
+};
+
+struct InputProcessingProgress {
+    struct ChunkInfo {
+        secs_t start = 0.0;
+        secs_t end = 0.0;
+
+        bool operator==(const ChunkInfo& c) const
+        {
+            return start == c.start && end == c.end;
+        }
+    };
+
+    using ChunkInfoList = std::vector<ChunkInfo>;
+
+    async::Channel<ChunkInfoList> chunksBeingProcessedChannel;
+    Progress progress;
 };
 }
 

@@ -490,6 +490,7 @@ void System::add(EngravingItem* el)
     case ElementType::GUITAR_BEND_SEGMENT:
     case ElementType::GUITAR_BEND_HOLD_SEGMENT:
     case ElementType::HAMMER_ON_PULL_OFF_SEGMENT:
+    case ElementType::TAPPING_HALF_SLUR_SEGMENT:
     {
         SpannerSegment* ss = toSpannerSegment(el);
 #ifndef NDEBUG
@@ -1101,12 +1102,18 @@ staff_idx_t System::firstSysStaffOfPart(const Part* part) const
 staff_idx_t System::firstVisibleSysStaffOfPart(const Part* part) const
 {
     staff_idx_t firstIdx = firstSysStaffOfPart(part);
+    if (firstIdx == muse::nidx) {
+        return muse::nidx;
+    }
+
     for (staff_idx_t idx = firstIdx; idx < firstIdx + part->nstaves(); ++idx) {
-        if (staff(idx)->show()) {
+        const SysStaff* s = staff(idx);
+        if (s && s->show()) {
             return idx;
         }
     }
-    return muse::nidx;   // No visible staves on this part.
+
+    return muse::nidx; // No visible staves on this part.
 }
 
 //---------------------------------------------------------

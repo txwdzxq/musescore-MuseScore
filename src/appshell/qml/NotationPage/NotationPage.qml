@@ -161,7 +161,7 @@ DockPage {
         DockToolBar {
             id: extDockToolBar
 
-            objectName: "extensionsToolBar"
+            objectName: root.pageModel.extensionsToolBarName()
             title: qsTrc("appshell", "Extensions toolbar")
 
             separatorsVisible: false
@@ -183,34 +183,6 @@ DockPage {
 
                 navigationPanel.section: extDockToolBar.navigationSection
                 navigationPanel.order: 4
-
-                function updateVisible() {
-                    if (!extDockToolBar.inited) {
-                        return;
-                    }
-
-                    if (!root.visible) {
-                        return;
-                    }
-
-                    if (extToolBar.isEmpty) {
-                        extDockToolBar.close()
-                    } else {
-                        extDockToolBar.open()
-                    }
-                }
-
-                onIsEmptyChanged: extToolBar.updateVisible()
-
-                Connections {
-                    target: extDockToolBar
-                    function onInitedChanged() { extToolBar.updateVisible() }
-                }
-
-                Connections {
-                    target: root
-                    function onVisibleChanged() { extToolBar.updateVisible() }
-                }
             }
         },
 
@@ -626,6 +598,34 @@ DockPage {
                     }
                 ]
             }
-        }
+        },
+        {
+            "eventCode": "online_sounds_added",
+            "tour": {
+                "id": "online-sounds-first-use",
+                "steps": [
+                    {
+                        "title": qsTrc("playback", "This sound processes online"),
+                        "description": qsTrc("playback", "An animated bar will let you know when sounds are processing online. You’ll also see a notification in the status bar. You can change when these notifications appear in Preferences > Audio & MIDI…"),
+                        "controlUri": "control://NotationStatusBar/NotationStatusBar/OnlineSoundsStatusView",
+                        "previewImageOrGifUrl": "qrc:/resources/OnlineSoundsPreview.gif",
+                        "videoExplanationUrl": "https://youtu.be/xm1-XkS9VzA?utm_source=mss-yt&utm_medium=enter-by-duration&utm_campaign=mss-yt-enter-by-duration"
+                    }
+                ]
+            }
+        },
+        {
+            "eventCode": "online_sounds_auto_process_disabled",
+            "tour": {
+                "id": "online-sounds-manual-process",
+                "steps": [
+                    {
+                        "title": qsTrc("playback", "Online sounds"),
+                        "description": qsTrc("playback", "Click to manually process online sounds."),
+                        "controlUri": "control://NotationStatusBar/NotationStatusBar/OnlineSoundsStatusView",
+                    }
+                ]
+            }
+        },
     ]
 }

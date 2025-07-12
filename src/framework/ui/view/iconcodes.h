@@ -215,6 +215,7 @@ public:
         NOTE_HEAD_HALF = 0xF342,
         NOTE_HEAD_WHOLE = 0xF343,
         NOTE_HEAD_BREVIS = 0xF344,
+        DOUBLE_BAR_LINE = 0xF347,
         NOTE_HEAD = 0xF42F,
         NOTE_HEAD_PARENTHESES = 0xF430,
 
@@ -323,6 +324,7 @@ public:
         PAN_SCORE = 0xF3B0,
         COUNT_IN = 0xF3B1,
 
+        INSIGHT = 0xF3B5,
         GLOBE = 0xF3B6,
         PRINT = 0xF3B7,
 
@@ -451,6 +453,8 @@ public:
         BPM = 0xF474,
         CLOCK = 0xF475,
 
+        TICK_RIGHT_ANGLE_THICK = 0xF477,
+
         PLAYHEAD = 0xF478,
         PLAYHEAD_FILLED = 0xF47A,
 
@@ -487,9 +491,21 @@ public:
 
         FRET_FRAME = 0xF491,
         DURATION_CURSOR = 0xF492,
+        WARNING_SMALL = 0xF493,
 
-        LOWER_CASE = 0xF49E,
-        UPPER_CASE = 0xF49F,
+        NOTE_ALIGN_LEFT = 0xF4A3,
+        NOTE_ALIGN_CENTER = 0xF4A4,
+        NOTE_ALIGN_RIGHT = 0xF4A5,
+
+        CHORD_BASS_ALIGN = 0xF4A6,
+        CHORD_BASS_OFFSET= 0xF4A7,
+
+        TAPPING_ENCIRCLED_T = 0xF49A,
+        TAPPING_DOT = 0xF49B,
+        TAPPING_PLUS = 0xF49C,
+        TAPPING_T = 0xF49D,
+        HP_LOWER_CASE = 0xF49E,
+        HP_UPPER_CASE = 0xF49F,
 
         NONE = 0xFFFF
     };

@@ -171,6 +171,8 @@ struct HarmonyDesc
     engraving::Harmony* m_harmony;
     engraving::FretDiagram* m_fretDiagram;
 
+    const engraving::ChordDescription* descr() const;
+
     HarmonyDesc(engraving::track_idx_t m_track, engraving::Harmony* m_harmony, engraving::FretDiagram* m_fretDiagram)
         : m_track(m_track), m_harmony(m_harmony),
         m_fretDiagram(m_fretDiagram) {}
@@ -575,6 +577,7 @@ private:
     void play();
     void swing();
     void dynamics();
+    void harpPedal();
     void otherDirection();
     void handleRepeats(engraving::Measure* measure, const engraving::Fraction tick, bool& measureHasCoda, SegnoStack& segnos,
                        DelayedDirectionsList& delayedDirections);
