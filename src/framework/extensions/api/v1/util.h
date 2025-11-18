@@ -72,8 +72,23 @@ public:
     /// Writes a string to the file.
     /// \warning This function overwrites all the contents of
     /// the file pointed by FileIO::source so it becomes lost.
+    /// \note For security reasons, files can only be written within
+    /// the user's MuseScore data directories (userAppDataPath and userDataPath).
+    /// Attempts to write outside these directories will be blocked.
     /// \returns `true` if an operation finished successfully.
     Q_INVOKABLE bool write(const QString& data);
+    /**
+     * Writes binary data to the file.
+     * Each character code (0-255) in the string is written as a single byte.
+     * Use this for binary files like images, soundfonts, etc.
+     * \warning This function overwrites all the contents of
+     * the file pointed by FileIO::source so it becomes lost.
+     * \note For security reasons, files can only be written within
+     * the user's MuseScore data directories (userAppDataPath and userDataPath).
+     * Attempts to write outside these directories will be blocked.
+     * \returns `true` if an operation finished successfully.
+     */
+    Q_INVOKABLE bool writeBinary(const QString& data);
     /// Removes the file
     Q_INVOKABLE bool remove();
     /// muse::Returns user's home directory
