@@ -37,7 +37,6 @@
 using namespace muse;
 using namespace muse::audio;
 using namespace muse::audio::engine;
-using namespace muse::audio::fx;
 using namespace muse::audio::synth;
 
 EngineController::EngineController(std::shared_ptr<rpc::IRpcChannel> rpcChannel)
